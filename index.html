@@ -507,6 +507,18 @@ footer p { margin: 0; max-width: 90ch; }
       { id: "evaccel", name: "ICE off", tag: "0→45", ramp: 8, title: "Accelerating, electric only",
         text: "MG2 alone pushes the ring. With the carrier held still, MG1 spins backwards ever faster as the car speeds up. MG1's speed limit is one reason the engine has to start at higher road speeds.",
         fn: t => fromKmh(0, 45 * clamp(t / 8, 0, 1)) },
+      { id: "overtake", name: "Overtaking", tag: "70→120", ramp: 11, title: "Overtaking: full throttle from 70 to 120 km/h",
+        text: "Floor the accelerator while cruising. The engine does not climb through gears: it jumps straight to about 4500 rpm, close to its peak power, and stays there while the car speeds up. MG1 spins very fast at first to make room for the engine, then slows as the ring speeds up. MG2 adds battery power at the ring for extra push. Once you ease off, the engine drops back to a calm cruising speed.",
+        stage: t => t < 1.5 ? "Cruising at 70 km/h on the engine."
+          : t < 2.5 ? "Full throttle: the engine jumps to about 4500 rpm and MG1 shoots up to let it."
+          : t < 8.5 ? "Engine speed holds steady while road speed climbs; MG2 adds battery power."
+          : t < 10 ? "120 km/h reached. Throttle eased, engine drops to cruising speed."
+          : "Highway cruise at 120 km/h; MG1 now turns backwards.",
+        fn: t => {
+          const floor = ease(clamp((t - 1.5) / 0.8, 0, 1)), lift = ease(clamp((t - 8.5) / 1.5, 0, 1));
+          const x = clamp((t - 1.5) / 7, 0, 1);
+          return fromKmh(1800 + 2700 * floor - 2300 * lift, 70 + 50 * (1 - Math.pow(1 - x, 1.5)));
+        } },
     ]},
     { group: "More states", items: [
       { id: "highway", name: "Highway cruise", tag: "120 km/h", title: "High-speed cruise",
