@@ -183,6 +183,30 @@ input[type=range] { width: 100%; margin: 0; }
 .svgt { font-family: var(--font-display); fill: var(--muted); }
 .svgm { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .halo { paint-order: stroke; stroke: var(--panel); stroke-width: 4px; stroke-linejoin: round; }
+/* Brake & regeneration */
+.brake-row { display: flex; gap: 14px; align-items: flex-end; }
+.pedal { margin: 0; flex: 1 1 auto; min-width: 0; }
+.pedal figcaption { font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; }
+.pedal figcaption b { font-family: var(--font-mono); color: var(--fg); font-variant-numeric: tabular-nums; }
+.meter { flex: none; display: flex; flex-direction: column; gap: 4px; }
+.meter .k { font-size: 12px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
+.meter .v { font-family: var(--font-mono); font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.meter .v small { font-size: 12px; font-weight: 400; color: var(--muted); margin-left: 3px; }
+.mwrap { display: flex; gap: 6px; }
+.mbar { position: relative; height: 140px; width: 30px; background: var(--grid); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.mfill { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: var(--mg2); }
+.mscale { display: flex; flex-direction: column; justify-content: space-between; font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); line-height: 1; }
+.split { display: flex; height: 14px; margin-top: 14px; border-radius: 3px; overflow: hidden; background: var(--grid); }
+.split i { display: block; height: 100%; width: 0; }
+#spBatt { background: var(--mg2); }
+#spEng { background: var(--ice); }
+#spFric { background: var(--warn); }
+.splitleg { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; font-size: 13px; }
+.splitleg span { display: inline-flex; align-items: center; gap: 6px; }
+.splitleg b { font-family: var(--font-mono); font-weight: 600; font-variant-numeric: tabular-nums; }
+.dot { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+.dot.batt { background: var(--mg2); } .dot.eng { background: var(--ice); } .dot.fric { background: var(--warn); }
+.brake .note { margin-top: 8px; }
 footer { font-size: 12.5px; color: var(--muted); }
 footer p { margin: 0; max-width: 90ch; }
 </style>
@@ -252,6 +276,44 @@ footer p { margin: 0; max-width: 90ch; }
           </g>
           <text id="dirText" class="svgt" x="8" y="20" font-size="15" font-weight="600" fill="var(--fg)">Stopped</text>
         </svg>
+      </section>
+
+      <section class="panel brake" aria-labelledby="brakeTitle">
+        <h2 id="brakeTitle">Brake &amp; regeneration</h2>
+        <div class="brake-row">
+          <figure class="pedal">
+            <svg id="pedalSvg" viewBox="-30 0 230 170" role="img" aria-label="Driver's foot and brake pedal, side view">
+              <line x1="-30" y1="161" x2="200" y2="161" stroke="var(--line)" stroke-width="2"></line>
+              <rect x="138" y="8" width="56" height="10" rx="2" fill="var(--grid)" stroke="var(--line)"></rect>
+              <g id="pedalArm">
+                <line x1="150" y1="20" x2="150" y2="128" stroke="var(--rim)" stroke-width="6" stroke-linecap="round"></line>
+                <rect x="142" y="112" width="12" height="38" rx="3" fill="var(--tire)"></rect>
+              </g>
+              <circle cx="150" cy="20" r="5" fill="var(--muted)"></circle>
+              <g id="foot">
+                <path d="M8 -28 L34 -30 L6 -112 L-20 -104 Z" fill="var(--muted)" opacity="0.55"></path>
+                <path d="M0 -4 Q0 4 8 4 L92 4 Q103 4 100 -6 Q96 -16 78 -20 L40 -30 Q22 -34 12 -30 Q0 -24 0 -4 Z" fill="var(--fg)"></path>
+                <path d="M6 4 L94 4" stroke="var(--warn)" stroke-width="2.5" stroke-linecap="round"></path>
+              </g>
+            </svg>
+            <figcaption><span>Brake pedal</span><b id="pedalOut">0%</b></figcaption>
+          </figure>
+          <div class="meter">
+            <div class="k">MG2<br>generating</div>
+            <div class="v"><span id="genKw">0.0</span><small>kW</small></div>
+            <div class="mwrap">
+              <div class="mbar" role="meter" aria-label="MG2 generating power" aria-valuemin="0" aria-valuemax="40" aria-valuenow="0" id="genMeter"><div class="mfill" id="genFill"></div></div>
+              <div class="mscale"><span>40</span><span>30</span><span>20</span><span>10</span><span>0</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="split" aria-hidden="true"><i id="spBatt"></i><i id="spEng"></i><i id="spFric"></i></div>
+        <div class="splitleg">
+          <span><i class="dot batt"></i>Battery <b id="kwBatt">0</b> kW</span>
+          <span><i class="dot eng"></i>Engine braking <b id="kwEng">0</b> kW</span>
+          <span><i class="dot fric"></i>Friction brakes <b id="kwFric">0</b> kW</span>
+        </div>
+        <p class="note" id="brakeNote">Not braking. Pick a braking scenario to see MG2 turn the car's motion back into electricity.</p>
       </section>
 
       <section class="panel" aria-labelledby="leverTitle">
@@ -454,7 +516,32 @@ footer p { margin: 0; max-width: 90ch; }
         text: "There is no reverse gear: MG2 simply spins the ring backwards. The engine stays off and MG1 freewheels forward.",
         fn: () => fromKmh(0, -10) },
     ]},
+    { group: "Braking and regeneration", items: [
+      { id: "liftoff", name: "Lifting off", tag: "80→65", ramp: 8.8, braking: true, title: "Lifting off the accelerator",
+        text: "No pedal at all. The car coasts, but instead of freewheeling, MG2 brakes lightly as a generator, imitating the engine braking of a normal car. Air and rolling drag do part of the slowing; MG2 harvests the rest. The engine is off, so MG1 spins backwards freely.",
+        fn: brakeRamp(80, 65, 8, 0) },
+      { id: "gentle", name: "Gentle stop", tag: "50→0", ramp: 9.8, braking: true, title: "Gentle stop at the lights",
+        text: "A light press on the pedal. The brake computer asks MG2 for all of the braking, so the friction brakes stay off and nearly all of the car's motion goes back into the battery. Below about 10 km/h MG2 can no longer brake well and the friction brakes finish the stop.",
+        stage: t => { const v = brakeRamp(50, 0, 9, 0.3)(t).kmh; return v > 10 ? "MG2 does all of the braking." : v > 0.5 ? "Regeneration fades out; the friction brakes take over." : "Stopped. The friction brakes hold the car."; },
+        fn: brakeRamp(50, 0, 9, 0.3) },
+      { id: "hard", name: "Hard stop", tag: "80→0", ramp: 4.8, braking: true, title: "Hard braking",
+        text: "A firm press. The car needs far more braking power than MG2 and the battery can take (about 30 kW here), so MG2 runs at its limit and the friction brakes turn the rest into heat. Regeneration helps most in gentle, frequent stops.",
+        stage: t => { const v = brakeRamp(80, 0, 4, 0.9)(t).kmh; return v > 10 ? "MG2 at its limit; friction brakes do most of the work." : v > 0.5 ? "Regeneration fades out at low speed." : "Stopped."; },
+        fn: brakeRamp(80, 0, 4, 0.9) },
+      { id: "downhill", name: "Downhill, battery full", tag: "60 km/h", braking: true, title: "Long descent with a full battery ('B' position)",
+        text: "Holding 60 km/h down a 7% slope. The battery is full, so the energy has to go somewhere else: MG2 still generates, and MG1 uses that electricity to spin the engine at about 3000 rpm with the fuel cut off. The engine's pumping losses do the braking, which is what the 'B' gear position asks for.",
+        fn: () => ({ ice: 3000, kmh: 60, pedal: 0, slope: 0.068, full: true }) },
+    ]},
   ];
+  // Braking scenario: cruise at v0, then (after 0.8 s) press the pedal and slow linearly to v1 over dur seconds.
+  function brakeRamp(v0, v1, dur, pedal) {
+    const delay = 0.8;
+    return t => {
+      const x = clamp((t - delay) / dur, 0, 1);
+      const press = pedal * clamp((t - delay + 0.4) / 0.4, 0, 1);
+      return { ice: 0, kmh: v0 + (v1 - v0) * x, pedal: press };
+    };
+  }
   const presetById = {};
   const groupsEl = document.getElementById("groups");
   let currentGroup = null;
@@ -480,18 +567,39 @@ footer p { margin: 0; max-width: 90ch; }
 
   // ---------- State ----------
   const state = { ice: 0, mg1: 0, preset: null, t: 0, paused: false, scale: 1 / 60,
-    thC: 0, thS: 0 }; // integrated carrier and sun angles (rad, forward = +)
+    thC: 0, thS: 0, pedal: 0, power: { need: 0, gen: 0, batt: 0, eng: 0, fric: 0 }, wh: 0 }; // integrated carrier and sun angles (rad, forward = +)
   const iceIn = document.getElementById("ice"), mg1In = document.getElementById("mg1");
   const $ = id => document.getElementById(id);
 
-  function applyTarget({ ice, kmh }) {
+  function applyTarget({ ice, kmh, pedal = 0 }) {
     const ring = ringFromKmh(kmh);
     state.ice = clamp(ice, 0, ICE_MAX);
     state.mg1 = clamp(mg1From(state.ice, ring), -MG1_MAX, MG1_MAX);
+    state.pedal = pedal;
+  }
+
+  // ---------- Braking power model (rough, Prius-like) ----------
+  const MASS = 1400, G = 9.81, CRR = 0.01, CDA = 0.55, RHO = 1.2;
+  const REGEN_MAX = 30;           // kW MG2 + battery can absorb
+  const ENGINE_DRAG = 4;          // kW absorbed per 1000 rpm when MG1 spins the engine with fuel cut
+  const ZERO_POWER = { need: 0, gen: 0, batt: 0, eng: 0, fric: 0 };
+  function brakingPower(p, t) {
+    if (!p || !p.braking) return ZERO_POWER;
+    const h = 0.05;
+    const now = p.fn(t), before = p.fn(Math.max(0, t - h)), after = p.fn(t + h);
+    const v = Math.abs(now.kmh) / 3.6;
+    const decel = (before.kmh - after.kmh) / 3.6 / (t - Math.max(0, t - h) + h);
+    const drag = v > 0.1 ? MASS * G * CRR + 0.5 * RHO * CDA * v * v : 0;
+    const force = MASS * decel + MASS * G * (now.slope || 0) - drag;   // N the powertrain/brakes must supply
+    const need = Math.max(0, force) * v / 1000;                        // kW
+    const fade = clamp((now.kmh - 5) / 5, 0, 1);                       // regen fades out between 10 and 5 km/h
+    const gen = Math.min(need * fade, REGEN_MAX);
+    const eng = now.full ? Math.min(gen, ENGINE_DRAG * now.ice / 1000) : 0;
+    return { need, gen, batt: gen - eng, eng, fric: need - gen };
   }
   function selectPreset(id) {
     const p = presetById[id];
-    state.preset = p; state.t = 0;
+    state.preset = p; state.t = 0; state.wh = 0;
     applyTarget(p.fn(0));
     document.querySelectorAll(".pbtn").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.id === id)));
     $("descTitle").textContent = p.title;
@@ -502,7 +610,7 @@ footer p { margin: 0; max-width: 90ch; }
   }
   function manual() {
     if (!state.preset) return;
-    state.preset = null;
+    state.preset = null; state.pedal = 0; state.power = ZERO_POWER;
     document.querySelectorAll(".pbtn").forEach(b => b.setAttribute("aria-pressed", "false"));
     $("descTitle").textContent = "Manual control";
     $("descText").textContent = "You are driving the engine and MG1 directly. Watch the ring speed follow from the two.";
@@ -511,7 +619,7 @@ footer p { margin: 0; max-width: 90ch; }
   }
   iceIn.addEventListener("input", () => { manual(); state.ice = +iceIn.value; });
   mg1In.addEventListener("input", () => { manual(); state.mg1 = +mg1In.value; });
-  $("replay").addEventListener("click", () => { state.t = 0; });
+  $("replay").addEventListener("click", () => { state.t = 0; state.wh = 0; });
   $("slowmo").addEventListener("change", e => { state.scale = 1 / +e.target.value; });
   function togglePause() {
     state.paused = !state.paused;
@@ -568,6 +676,8 @@ footer p { margin: 0; max-width: 90ch; }
     w.hidden = msgs.length === 0;
     w.textContent = msgs.join(" ");
 
+    renderBrake();
+
     // Gear angles
     const rel = state.thS - state.thC;
     sunRot.setAttribute("transform", `rotate(${deg(state.thS)})`);
@@ -582,6 +692,39 @@ footer p { margin: 0; max-width: 90ch; }
     $("road").setAttribute("stroke-dashoffset", (wheelAng * 74).toFixed(2));
   }
 
+  // Pedal geometry (pedal SVG coordinates)
+  const PIVOT = { x: 150, y: 20 }, ARM = 110, HEEL = { x: 22, y: 157 }, TOE = 100;
+  function renderBrake() {
+    const press = clamp(state.pedal, 0, 1);
+    const rot = 15 - 25 * press;                       // degrees, SVG clockwise
+    const r = rot * Math.PI / 180;
+    $("pedalArm").setAttribute("transform", `rotate(${rot.toFixed(2)} ${PIVOT.x} ${PIVOT.y})`);
+    const pad = { x: PIVOT.x - ARM * Math.sin(r) - 9, y: PIVOT.y + ARM * Math.cos(r) + 6 };
+    const ang = Math.atan2(pad.y - HEEL.y, pad.x - HEEL.x);
+    const dist = Math.hypot(pad.x - HEEL.x, pad.y - HEEL.y);
+    const resting = state.preset && state.preset.braking && state.preset.id !== "liftoff" && state.preset.id !== "downhill";
+    const gap = resting || press > 0 ? 0 : 14;          // foot hovers off the pedal when not braking
+    $("foot").setAttribute("transform", `translate(${HEEL.x} ${HEEL.y}) rotate(${deg(ang)}) translate(${(dist - TOE - gap).toFixed(2)} 0)`);
+    $("pedalOut").textContent = Math.round(press * 100) + "%";
+
+    const P = state.power;
+    $("genKw").textContent = P.gen.toFixed(1);
+    $("genFill").style.height = clamp(P.gen / 40 * 100, 0, 100) + "%";
+    $("genMeter").setAttribute("aria-valuenow", P.gen.toFixed(1));
+    const tot = P.need || 1;
+    $("spBatt").style.width = (P.need ? P.batt / tot * 100 : 0) + "%";
+    $("spEng").style.width = (P.need ? P.eng / tot * 100 : 0) + "%";
+    $("spFric").style.width = (P.need ? P.fric / tot * 100 : 0) + "%";
+    $("kwBatt").textContent = P.batt.toFixed(1);
+    $("kwEng").textContent = P.eng.toFixed(1);
+    $("kwFric").textContent = P.fric.toFixed(1);
+    let note;
+    if (!state.preset || !state.preset.braking) note = "Not braking. Pick a braking scenario to see MG2 turn the car's motion back into electricity.";
+    else if (P.need < 0.05) note = `No braking power needed right now. Recovered this run: ${state.wh.toFixed(1)} Wh.`;
+    else note = `Braking power needed: ${P.need.toFixed(1)} kW. Recovered into the battery this run: ${state.wh.toFixed(1)} Wh.`;
+    $("brakeNote").textContent = note;
+  }
+
   let last = performance.now();
   function frame(now) {
     const dt = Math.min(0.05, (now - last) / 1000);
@@ -589,13 +732,15 @@ footer p { margin: 0; max-width: 90ch; }
     if (!state.paused) {
       if (state.preset && state.preset.ramp) {
         state.t += dt;
-        if (state.t > state.preset.ramp + 1.5) state.t = 0;
+        if (state.t > state.preset.ramp + 1.5) { state.t = 0; state.wh = 0; }
         applyTarget(state.preset.fn(state.t));
         if (state.preset.stage) $("descStage").textContent = "Now: " + state.preset.stage(state.t);
       }
       const k = TAU / 60 * state.scale * dt; // rpm -> rad this frame
       state.thC += state.ice * k;
       state.thS += state.mg1 * k;
+      state.power = brakingPower(state.preset, state.t);
+      state.wh += state.power.batt * 1000 * dt / 3600;
     }
     render();
     requestAnimationFrame(frame);
