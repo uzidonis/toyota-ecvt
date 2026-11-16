@@ -87,10 +87,11 @@ h2 {
 .grid {
   display: grid;
   gap: 16px;
-  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
   grid-template-areas:
-    "gear gear side"
-    "ctrl preset preset";
+    "main side"
+    "preset preset";
+  align-items: start;
 }
 .panel {
   background: var(--panel);
@@ -99,18 +100,14 @@ h2 {
   padding: 14px;
   min-width: 0;
 }
-.gear { grid-area: gear; display: flex; flex-direction: column; }
+.main { grid-area: main; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.gear { display: flex; flex-direction: column; }
+.duo { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; align-items: start; }
 .side { grid-area: side; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-.ctrl { grid-area: ctrl; }
 .preset { grid-area: preset; }
 @media (max-width: 980px) {
-  .grid {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-areas: "gear gear" "ctrl side" "preset preset";
-  }
-}
-@media (max-width: 680px) {
-  .grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "gear" "ctrl" "side" "preset"; }
+  .grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "main" "side" "preset"; }
+  .side { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); align-items: start; }
 }
 
 svg { display: block; width: 100%; height: auto; }
@@ -218,6 +215,7 @@ footer p { margin: 0; max-width: 90ch; }
   </header>
 
   <div class="grid">
+    <div class="main">
     <section class="panel gear" aria-labelledby="gearTitle">
       <div class="gear-head">
         <h2 id="gearTitle">Power-split device</h2>
@@ -252,9 +250,57 @@ footer p { margin: 0; max-width: 90ch; }
       </div>
     </section>
 
+    <div class="duo">
+    <section class="panel ctrl" aria-labelledby="ctrlTitle">
+      <h2 id="ctrlTitle">Controls</h2>
+      <div class="slider">
+        <label for="ice">Engine (ICE) <output id="iceOut" for="ice">0 rpm</output></label>
+        <input type="range" id="ice" min="0" max="5000" step="10" value="0">
+        <div class="scale"><span>0</span><span>2500</span><span>5000</span></div>
+      </div>
+      <div class="slider">
+        <label for="mg1">MG1 <output id="mg1Out" for="mg1">0 rpm</output></label>
+        <input type="range" id="mg1" min="-10000" max="10000" step="10" value="0">
+        <div class="scale"><span>−10000 back</span><span>0</span><span>fwd 10000</span></div>
+      </div>
+      <p class="note">MG2 is bolted to the ring gear, so its speed is not a control here: it is whatever the engine and MG1 leave for the ring. Picking a preset plays it; moving a slider takes over manually.</p>
+      <div class="warn" id="warn" hidden></div>
+    </section>
+    <section class="panel" aria-labelledby="leverTitle">
+      <h2 id="leverTitle">Speed diagram (lever)</h2>
+      <svg id="leverSvg" viewBox="0 0 380 300" role="img" aria-label="Lever diagram: MG1, engine and ring speeds always lie on one straight line">
+        <g id="leverStatic"></g>
+        <line id="lvLine" stroke="var(--fg)" stroke-width="2.5" stroke-linecap="round"></line>
+        <circle id="lvMg1" r="7" fill="var(--mg1)"></circle>
+        <circle id="lvIce" r="7" fill="var(--ice)"></circle>
+        <circle id="lvRing" r="7" fill="var(--mg2)"></circle>
+        <text id="lvMg1T" class="svgm halo" font-size="12" text-anchor="start" fill="var(--mg1)"></text>
+        <text id="lvIceT" class="svgm halo" font-size="12" text-anchor="end" fill="var(--ice)"></text>
+        <text id="lvRingT" class="svgm halo" font-size="12" text-anchor="end" fill="var(--mg2)"></text>
+      </svg>
+      <p class="note">The engine sits between the two motors, 78 : 30 closer to the ring. The three speeds always form a straight line, so two of them fix the third.</p>
+    </section>
+    </div>
+    </div>
+
     <div class="side">
       <section class="panel" aria-labelledby="wheelTitle">
-        <h2 id="wheelTitle">Wheel</h2>
+        <h2 id="wheelTitle">Ring gear → wheels</h2>
+        <svg id="driveSvg" viewBox="0 0 320 222" role="img" aria-label="Gear train from the ring gear's outer teeth through the counter gear and final drive to the differential and axles">
+          <g id="dvDiff"></g>
+          <g id="dvCounter"></g>
+          <g id="dvPinion"></g>
+          <g id="dvRing"></g>
+          <line x1="164" y1="134" x2="304" y2="134" stroke="var(--mg2)" stroke-width="6" stroke-linecap="round"></line>
+          <path d="M296 126 L310 134 L296 142 Z" fill="var(--mg2)"></path>
+          <rect x="152" y="122" width="24" height="24" rx="4" fill="var(--mg2)"></rect>
+          <text class="svgt halo" x="48" y="14" font-size="12" text-anchor="middle" font-weight="600" style="fill: var(--mg2)">Ring gear</text>
+          <text class="svgt halo" x="48" y="118" font-size="11" text-anchor="middle">outer teeth</text>
+          <text class="svgt halo" x="128" y="14" font-size="12" text-anchor="middle" font-weight="600">Counter gear + pinion</text>
+          <text class="svgt halo" x="164" y="219" font-size="12" text-anchor="middle" font-weight="600">Differential</text>
+          <text class="svgt halo" x="304" y="120" font-size="12" text-anchor="end" font-weight="600" style="fill: var(--mg2)">axles → wheels</text>
+        </svg>
+        <p class="note" id="driveText">Ring 0 rpm → counter shaft 0 rpm → wheels 0 rpm</p>
         <svg id="wheelSvg" viewBox="0 0 320 190" role="img" aria-label="Drive wheel on the road with direction of rotation">
           <defs>
             <marker id="arrowHead" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
@@ -276,6 +322,7 @@ footer p { margin: 0; max-width: 90ch; }
           </g>
           <text id="dirText" class="svgt" x="8" y="20" font-size="15" font-weight="600" fill="var(--fg)">Stopped</text>
         </svg>
+        <p class="note">The ring gear has a second set of teeth on its outside. They turn the counter gear, whose small pinion turns the differential and the axles. Every link is a fixed gear mesh, so the ring always turns exactly 4.11 times for each turn of the wheels: when the wheels stop, the ring and MG2 stop too.</p>
       </section>
 
       <section class="panel brake" aria-labelledby="brakeTitle">
@@ -316,37 +363,7 @@ footer p { margin: 0; max-width: 90ch; }
         <p class="note" id="brakeNote">Not braking. Pick a braking scenario to see MG2 turn the car's motion back into electricity.</p>
       </section>
 
-      <section class="panel" aria-labelledby="leverTitle">
-        <h2 id="leverTitle">Speed diagram (lever)</h2>
-        <svg id="leverSvg" viewBox="0 0 380 300" role="img" aria-label="Lever diagram: MG1, engine and ring speeds always lie on one straight line">
-          <g id="leverStatic"></g>
-          <line id="lvLine" stroke="var(--fg)" stroke-width="2.5" stroke-linecap="round"></line>
-          <circle id="lvMg1" r="7" fill="var(--mg1)"></circle>
-          <circle id="lvIce" r="7" fill="var(--ice)"></circle>
-          <circle id="lvRing" r="7" fill="var(--mg2)"></circle>
-          <text id="lvMg1T" class="svgm halo" font-size="12" text-anchor="start" fill="var(--mg1)"></text>
-          <text id="lvIceT" class="svgm halo" font-size="12" text-anchor="end" fill="var(--ice)"></text>
-          <text id="lvRingT" class="svgm halo" font-size="12" text-anchor="end" fill="var(--mg2)"></text>
-        </svg>
-        <p class="note">The engine sits between the two motors, 78 : 30 closer to the ring. The three speeds always form a straight line, so two of them fix the third.</p>
-      </section>
     </div>
-
-    <section class="panel ctrl" aria-labelledby="ctrlTitle">
-      <h2 id="ctrlTitle">Controls</h2>
-      <div class="slider">
-        <label for="ice">Engine (ICE) <output id="iceOut" for="ice">0 rpm</output></label>
-        <input type="range" id="ice" min="0" max="5000" step="10" value="0">
-        <div class="scale"><span>0</span><span>2500</span><span>5000</span></div>
-      </div>
-      <div class="slider">
-        <label for="mg1">MG1 <output id="mg1Out" for="mg1">0 rpm</output></label>
-        <input type="range" id="mg1" min="-10000" max="10000" step="10" value="0">
-        <div class="scale"><span>−10000 back</span><span>0</span><span>fwd 10000</span></div>
-      </div>
-      <p class="note">MG2 is bolted to the ring gear, so its speed is not a control here: it is whatever the engine and MG1 leave for the ring. Picking a preset plays it; moving a slider takes over manually.</p>
-      <div class="warn" id="warn" hidden></div>
-    </section>
 
     <section class="panel preset" aria-labelledby="presetTitle">
       <h2 id="presetTitle">Scenarios</h2>
@@ -359,7 +376,7 @@ footer p { margin: 0; max-width: 90ch; }
   </div>
 
   <footer>
-    <p>Independent explainer, not affiliated with Toyota. Kinematics only (speeds, not torque). Numbers modelled on a 2nd-generation Prius: sun 30 teeth, ring 78, planets 24, final drive 4.113, tyre circumference 1.93 m, MG2 limit 6500 rpm, MG1 limit 10000 rpm.</p>
+    <p>Independent explainer, not affiliated with Toyota. Kinematics only (speeds, not torque). Numbers modelled on a 2nd-generation Prius: sun 30 teeth, ring 78, planets 24, final drive ≈4.11 (drivetrain tooth counts are illustrative), tyre circumference 1.93 m, MG2 limit 6500 rpm, MG1 limit 10000 rpm.</p>
   </footer>
 </div>
 
@@ -367,7 +384,9 @@ footer p { margin: 0; max-width: 90ch; }
 (() => {
   // ---------- Gear-set constants ----------
   const ZS = 30, ZR = 78, ZP = 24, MOD = 3;
-  const FD = 4.113, TIRE = 1.93;
+  // Ring outer teeth 36 → counter gear 37, final-drive pinion 19 → differential 76 (illustrative teeth, ≈ Gen 2's 4.113)
+  const ZRO = 36, ZCO = 37, ZPI = 19, ZDF = 76;
+  const FD = (ZCO / ZRO) * (ZDF / ZPI), TIRE = 1.93;
   const ICE_MAX = 5000, MG1_MAX = 10000, MG2_MAX = 6500;
   const RS = MOD * ZS / 2, RP = MOD * ZP / 2, RR = MOD * ZR / 2, A = RS + RP; // 45, 36, 117, 81
   const TAU = Math.PI * 2;
@@ -388,10 +407,10 @@ footer p { margin: 0; max-width: 90ch; }
     if (parent) parent.appendChild(n);
     return n;
   };
-  function teethPath(Z, r, internal) {
+  function teethPath(Z, r, internal, mod = MOD) {
     const p = TAU / Z;
-    const tip = internal ? r - MOD : r + MOD;
-    const root = internal ? r + 1.25 * MOD : r - 1.25 * MOD;
+    const tip = internal ? r - mod : r + mod;
+    const root = internal ? r + 1.25 * mod : r - 1.25 * mod;
     let d = "";
     for (let i = 0; i < Z; i++) {
       const c = i * p;
@@ -418,8 +437,36 @@ footer p { margin: 0; max-width: 90ch; }
   // Ring
   const ringG = document.getElementById("ringG");
   const ringRot = el("g", {}, ringG);
-  el("path", { d: circlePath(136) + teethPath(ZR, RR, true), "fill-rule": "evenodd", fill: "var(--mg2-soft)", stroke: "var(--mg2)", "stroke-width": 2, "stroke-linejoin": "round" }, ringRot);
-  el("circle", { cx: 129, cy: 0, r: 4, fill: "var(--mg2)" }, ringRot);
+  // Ring gear: internal teeth for the planets, external teeth (the counter drive gear) towards the wheels
+  el("path", { d: teethPath(88, 132, false) + teethPath(ZR, RR, true), "fill-rule": "evenodd", fill: "var(--mg2-soft)", stroke: "var(--mg2)", "stroke-width": 2, "stroke-linejoin": "round" }, ringRot);
+  el("circle", { cx: 124.5, cy: 0, r: 3.5, fill: "var(--mg2)" }, ringRot);
+
+  // ---------- Drivetrain: ring outer teeth → counter gear → pinion → differential ----------
+  const DV = { m1: 2, m2: 1.8 };
+  DV.ring = { x: 48, y: 62 };
+  DV.counter = { x: DV.ring.x + (ZRO + ZCO) / 2 * DV.m1, y: DV.ring.y };
+  const dvPhi = Math.PI / 3; // direction from pinion to differential
+  DV.diff = { x: DV.counter.x + (ZPI + ZDF) / 2 * DV.m2 * Math.cos(dvPhi), y: DV.counter.y + (ZPI + ZDF) / 2 * DV.m2 * Math.sin(dvPhi) };
+  const dvG = (id, c) => el("g", {}, el("g", { transform: `translate(${c.x.toFixed(2)} ${c.y.toFixed(2)})` }, document.getElementById(id)));
+  const gearStyle = (fill) => ({ fill, stroke: "var(--mg2)", "stroke-width": 1.5, "stroke-linejoin": "round" });
+  const dvDiff = dvG("dvDiff", DV.diff);
+  el("path", { d: teethPath(ZDF, ZDF * DV.m2 / 2, false, DV.m2), ...gearStyle("var(--panel)") }, dvDiff);
+  el("circle", { r: ZDF * DV.m2 / 2 - 14, fill: "none", stroke: "var(--mg2)", "stroke-width": 1, opacity: 0.5 }, dvDiff);
+  el("circle", { cx: ZDF * DV.m2 / 2 - 8, cy: 0, r: 3, fill: "var(--mg2)" }, dvDiff);
+  const dvCounter = dvG("dvCounter", DV.counter);
+  el("path", { d: teethPath(ZCO, ZCO * DV.m1 / 2, false, DV.m1), ...gearStyle("var(--panel)"), "fill-opacity": 0.8 }, dvCounter);
+  el("circle", { cx: ZCO * DV.m1 / 2 - 7, cy: 0, r: 3, fill: "var(--mg2)" }, dvCounter);
+  const dvPinion = dvG("dvPinion", DV.counter);
+  el("path", { d: teethPath(ZPI, ZPI * DV.m2 / 2, false, DV.m2), ...gearStyle("var(--mg2-soft)") }, dvPinion);
+  el("circle", { r: 4, fill: "var(--mg2)" }, dvPinion);
+  const dvRing = dvG("dvRing", DV.ring);
+  el("path", { d: teethPath(ZRO, ZRO * DV.m1 / 2, false, DV.m1) + circlePath(20), "fill-rule": "evenodd", ...gearStyle("var(--mg2-soft)") }, dvRing);
+  el("circle", { cx: ZRO * DV.m1 / 2 - 8, cy: 0, r: 3, fill: "var(--mg2)" }, dvRing);
+  el("text", { "text-anchor": "middle", y: 4, "font-size": 10, "font-weight": 700, class: "svgt", style: "fill: var(--mg2)" }, dvRing.parentNode).textContent = "MG2";
+  // Mesh phases (same method as the planets): counter meshes ring at angle 0, differential meshes pinion at dvPhi
+  const pCo = TAU / ZCO, pDf = TAU / ZDF, pPi = TAU / ZPI;
+  const counterOff = Math.PI - 0.5 * pCo;
+  const diffOff = dvPhi + Math.PI + (frac(dvPhi / pPi) - 0.5) * pDf;
 
   // Carrier + planets
   const carrierG = document.getElementById("carrierG");
@@ -689,6 +736,7 @@ footer p { margin: 0; max-width: 90ch; }
     w.textContent = msgs.join(" ");
 
     renderBrake();
+    $("driveText").textContent = `Ring ${fmt(ring)} rpm → counter shaft ${fmt(-ring * ZRO / ZCO)} rpm → wheels ${fmt(wheelRpm)} rpm (÷ ${FD.toFixed(2)})`;
 
     // Gear angles
     const rel = state.thS - state.thC;
@@ -699,6 +747,11 @@ footer p { margin: 0; max-width: 90ch; }
     const ringAng = state.thC - (ZS / ZR) * rel;
     ringRot.setAttribute("transform", `rotate(${deg(ringAng + ringPhase)})`);
     const wheelAng = ringAng / FD;
+    const coAng = counterOff - (ZRO / ZCO) * ringAng;
+    dvRing.setAttribute("transform", `rotate(${deg(ringAng)})`);
+    dvCounter.setAttribute("transform", `rotate(${deg(coAng)})`);
+    dvPinion.setAttribute("transform", `rotate(${deg(coAng)})`);
+    dvDiff.setAttribute("transform", `rotate(${deg(diffOff - (ZPI / ZDF) * coAng)})`);
     $("wheelRot").setAttribute("transform", `rotate(${deg(wheelAng)})`);
     // Road moves opposite to travel; 74 px = tyre radius (0.307 m)
     $("road").setAttribute("stroke-dashoffset", (wheelAng * 74).toFixed(2));
